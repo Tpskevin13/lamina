@@ -1,0 +1,6 @@
+pillow>=10.1
+numpy
+reportlab>=4
+pypdfium2>=4
+# opcional, para fotos .heic de iPhone:
+# pillow-heif
