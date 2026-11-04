@@ -1,6 +1,6 @@
 # foto-a-pdf
 
-Skill para [Claude Code](https://claude.com/claude-code) que convierte la **foto de un documento en un PDF con el diseño a medida**. Sirve para facturas, presupuestos, formularios, cartas, recibos y apuntes.
+Skill para [Claude Code](https://claude.com/claude-code) que convierte la **foto de un documento en un PDF con el diseño a medida**. Sirve para facturas, presupuestos, formularios, cartas, recibos, apuntes y **planos y láminas de dibujo técnico** (cotas, ejes, arcos, isométrica).
 
 Claude analiza la foto de arriba a abajo, renglón por renglón. Después arma un PDF donde cada texto, tabla, línea, casilla, logo y firma queda en el mismo lugar y del mismo tamaño que en la foto. El texto es **texto real**: se puede seleccionar, copiar y buscar. No es la foto pegada dentro de un PDF.
 
@@ -74,20 +74,25 @@ Pasale la foto a Claude y pedile el PDF:
 
 > Digitalizá este formulario respetando el formato
 
+> Pasá a PDF esta lámina de dibujo técnico, es A4 apaisada y está en isométrica
+
 También podés llamar a la skill directamente. Si la instalaste como plugin, el comando es `/foto-a-pdf:foto-a-pdf ruta/de/la/foto.jpg`. Si la copiaste a mano, es `/foto-a-pdf ruta/de/la/foto.jpg`.
 
 Si pegaste la imagen en el chat, Claude busca las últimas imágenes de Descargas, Escritorio e Imágenes y te confirma cuál es. Lo más seguro es darle la ruta del archivo.
+
+Con la foto torcida o de costado no hace falta hacer nada: la hoja se endereza sola y, si está girada 90° o 180°, Claude lo ve y la gira. En los dibujos, las líneas casi rectas quedan exactas a 0°, 45° y 90°, o a 30°, 90° y 150° si le decís que es isométrica, y las esquinas quedan cerradas.
 
 El PDF queda al lado de la foto, con el mismo nombre. Si ya hay uno con ese nombre, no lo pisa. Al terminar, Claude te dice qué tan bien coincide con la foto y qué partes no pudo leer: las marca con `[?]` o `[ilegible]`.
 
 ## Cómo funciona
 
-1. **Enderezar** (`preparar.py`). Detecta la hoja en la foto, corrige la perspectiva y estima el tamaño real del papel (A4, carta, oficio…). También empareja la luz.
+1. **Enderezar** (`preparar.py`). Detecta la hoja en la foto, corrige la perspectiva y estima el tamaño real del papel (A4, carta, oficio…). Gira la foto si está de costado y corrige la inclinación chica del contenido. También empareja la luz.
 2. **Cortar en franjas**. Divide la hoja en franjas horizontales ampliadas, con reglas. Así Claude puede leer cada renglón de cerca, de arriba a abajo.
 3. **Describir**. Claude escribe un `layout.json` con cada elemento y su posición: textos, líneas, recuadros, casillas, tablas e imágenes. Los logos, sellos y firmas se recortan de la foto. Las posiciones se miden en "u", donde el ancho de la página es 1000 u.
 4. **Encajar** (`encajar.py`). Ajusta cada caja a la tinta real de la foto: la línea base, el alto de las letras, dónde empieza cada palabra y dónde están los bordes de tablas y líneas.
-5. **Dibujar** (`construir.py`). Arma el PDF con ReportLab y fuentes TrueType. El tamaño de letra sale del alto medido de ese texto en esa fuente.
-6. **Comparar** (`comparar.py`). Renderiza el PDF y lo superpone con la foto: en rojo lo que falta, en celeste lo que sobra. Da la cobertura y la precisión por franja. Claude corrige y repite.
+5. **Rectificar** (`rectificar.py`). En los dibujos, lleva cada línea al ángulo permitido más cercano (orto, 45°, isométrica, caballera…) y cierra las esquinas por mínimos cuadrados, sin cambiar ningún ángulo.
+6. **Dibujar** (`construir.py`). Arma el PDF con ReportLab y fuentes TrueType. El tamaño de letra sale del alto medido de ese texto en esa fuente.
+7. **Comparar** (`comparar.py`). Renderiza el PDF y lo superpone con la foto: en rojo lo que falta, en celeste lo que sobra. Da la cobertura y la precisión por franja. Claude corrige y repite.
 
 Los pasos están detallados en [`skills/foto-a-pdf/SKILL.md`](skills/foto-a-pdf/SKILL.md).
 

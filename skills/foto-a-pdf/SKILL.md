@@ -1,6 +1,6 @@
 ---
 name: foto-a-pdf
-description: Convierte una foto de un documento (factura, presupuesto, formulario, carta, apunte, recibo, cartel, tabla, página impresa o escrita a mano) en un PDF que respeta el diseño a medida: misma posición y tamaño de cada renglón, tablas, líneas, casillas, logos y firmas, con texto real seleccionable. Analiza la foto de arriba a abajo, línea por línea, y verifica el resultado superponiéndolo con la foto. Usala siempre que el usuario pase una foto o captura y pida pasarla a PDF, digitalizarla, "escanearla", rehacerla, transcribirla manteniendo el formato o recrear el documento, aunque no diga "layout" ni "PDF".
+description: 'Convierte una foto de un documento (factura, presupuesto, formulario, carta, apunte, recibo, cartel, tabla, plano o lámina de dibujo técnico, página impresa o escrita a mano) en un PDF que respeta el diseño a medida: misma posición y tamaño de cada renglón, tablas, líneas, casillas, logos y firmas, con texto real seleccionable. Analiza la foto de arriba a abajo, línea por línea, y verifica el resultado superponiéndolo con la foto. Usala siempre que el usuario pase una foto o captura y pida pasarla a PDF, digitalizarla, "escanearla", rehacerla, transcribirla manteniendo el formato o recrear el documento, aunque no diga "layout" ni "PDF".'
 argument-hint: "[ruta de la foto] [papel: a4|carta|oficio]"
 ---
 
@@ -49,6 +49,8 @@ python S/preparar.py preparar FOTO --esquinas auto --papel a4 --limpiar
 - `--papel`: `a4` (lo más común en Argentina y Europa), `carta`, `oficio`, `legal`, `a5`, `auto` o `AxB` en mm. Si no sabés, `auto` elige el más parecido a la proporción medida (corrige la perspectiva). Si dice "a medida", la hoja no es estándar (un ticket, por ejemplo) y está bien.
 - `--limpiar`: empareja la luz y deja el papel blanco. Usalo con fotos de papel; no con capturas de pantalla.
 - `--esquinas`: `auto` o las cuatro esquinas entre comillas. Sin esta opción, la imagen se usa tal cual.
+- `--rotar 90|180|270`: si en `vista.png` la hoja está de costado o al revés, girala esos grados en sentido horario (corré `ver` de nuevo con el mismo `--rotar` para confirmar).
+- Enderezado fino: `preparar` mide si el contenido quedó torcido (hasta 5°) y lo deja a 0°/90°; lo informa con "Enderecé el contenido …". `--sin-enderezar` lo apaga (por ejemplo, si el documento tiene a propósito todo inclinado).
 
 El comando crea una carpeta de trabajo (la muestra al final) con:
 
@@ -113,15 +115,36 @@ El tamaño de letra sale de esa caja, así que no hace falta poner `tam`. No hac
 
 | tipo | campos | notas |
 |---|---|---|
-| `texto` | `caja`, `texto`; opcionales `fuente`, `negrita`, `cursiva`, `color`, `tam`, `subrayado`, `tachado`, `ajuste`, `alinear`, `encajar` | Un renglón. Con `ajuste: "no"` no se estira para llenar la caja, solo se achica si no entra, y se alinea con `alinear` (`izq`, `centro`, `der`). |
-| `linea` | `de [x, y]`, `a [x, y]`; `grosor` (u, por defecto 1), `color`, `trazo` (`solido`, `guiones`, `puntos`) | Reglas, separadores, renglones para escribir. |
+| `texto` | `caja`, `texto`; opcionales `fuente`, `negrita`, `cursiva`, `color`, `tam`, `subrayado`, `tachado`, `ajuste`, `alinear`, `giro`, `encajar` | Un renglón. Con `ajuste: "no"` no se estira para llenar la caja, solo se achica si no entra, y se alinea con `alinear` (`izq`, `centro`, `der`). `giro: 90` = texto vertical que se lee de abajo hacia arriba (cotas de planos); `270`, de arriba hacia abajo: la caja es la que ocupa en la hoja. Cualquier otro giro (30, 150, 180…, antihorario): `centro [x, y]`, `largo` y `alto` del renglón sin girar (rótulos de isométrica). El texto girado no se encaja. |
+| `linea` | `de [x, y]`, `a [x, y]`; `grosor` (u, por defecto 1), `color`, `trazo` (`solido`, `guiones`, `puntos`), `flechas` (`inicio`, `fin`, `ambas`), `flecha` (largo de la punta en u, por defecto 4) | Reglas, separadores, renglones para escribir, cotas y ejes de planos. |
+| `arco` | `centro [x, y]`, `radio`, `desde`, `hasta` (grados: 0 = derecha, 90 = arriba, antihorario); `radio_y`, `giro`, `grosor`, `color`, `trazo` | Esquinas redondeadas, arcos de ángulos. Con `radio_y` es un arco de elipse, girado `giro` grados (arcos en isométrica). |
 | `rect` | `caja`; `borde` (color o `null`), `relleno`, `grosor`, `radio` | Recuadros, fondos de color, bandas. |
-| `elipse` | `caja`; `borde`, `relleno`, `grosor` | Círculos y óvalos. |
+| `elipse` | `caja`; `borde`, `relleno`, `grosor`, `giro` | Círculos y óvalos. Con `giro`, la caja es la elipse sin girar y gira sobre su centro (círculos en isométrica, ver abajo). |
 | `casilla` | `caja`; `marca` (`x`, `v`, `relleno` o nada), `grosor`, `color` | Checkbox. Si está tildada, `marca`. |
 | `tabla` | `columnas` (x de cada borde), `filas` (y de cada borde), `celdas` (lista de filas); `bordes` (`todos`, `horizontales`, `externos`, `ninguno`), `tam`, `fuente`, `alinear` (uno o lista por columna), `negrita_filas`, `relleno_filas`, `color`, `color_borde`, `grosor` | Para tablas con grilla regular. `"\n"` en una celda = varios renglones. Si la tabla es irregular, armala con `linea` y `texto`. |
 | `imagen` | `caja`; `archivo` (opcional), `transparente` (por defecto `true`) | Sin `archivo`, recorta esa zona de la foto enderezada: usalo para logos, sellos, firmas, dibujos, fotos, códigos QR y de barras. `transparente` borra el papel del recorte para que no quede un parche gris. |
 
 Colores: `"#rrggbb"`. Para texto gris, azul o rojo, poné el color que se ve; en textos negros no hace falta.
+
+### Dibujos técnicos: líneas rectas y ángulos
+
+En un dibujo, las líneas que en la foto salen casi horizontales, verticales o a 45° se dejan **exactas**, aunque la foto (o el dibujo a mano) las tenga un poco torcidas. Al armar, cada `linea` se lleva al ángulo permitido más cercano si está a menos de `tolerancia_angulo` grados (por defecto 4). Después se cierran las esquinas: las puntas que casi se tocan pasan a ser el mismo vértice, y una punta pegada a otra línea queda apoyada en ella. Los segmentos de una cota en cadena quedan alineados.
+
+Elegí los ángulos con la clave `angulos` en la raíz de `layout.json`:
+
+| `angulos` | ángulos | para |
+|---|---|---|
+| `"orto45"` (por defecto) | 0, 45, 90, 135 | planos, formularios, chaflanes |
+| `"orto"` | 0, 90 | solo horizontales y verticales |
+| `"iso"` | 0, 30, 90, 150 | perspectiva isométrica |
+| `"caballera"` | 0, 45, 90, 135 | perspectiva caballera |
+| `"dimetrica"` | 0, 7, 42, 90, 138, 173 | dimétrica normalizada |
+| `[0, 60, 90, 120]` | los que pongas | otros sistemas |
+| `"libre"` | — | no tocar los ángulos (gráficos, croquis) |
+
+`"rectificar": false` en una línea la deja como está (una inclinada a propósito que cae cerca de un ángulo permitido).
+
+Isométrica: anotá las aristas como `linea` (cada arista de una pieza, de vértice a vértice). Los círculos de las caras salen como elipses de proporción 1 : 0,58: en la cara de arriba, `elipse` con el eje largo horizontal (`giro: 0`); en la cara lateral derecha, `giro: 60`, y en la izquierda, `giro: 120` (el eje largo queda perpendicular a la arista que sale de esa cara). Los arcos, con `arco` y `radio_y` igual a 0,58 × `radio` y el mismo `giro`. Los rótulos sobre una cara llevan `giro: 30` o `giro: 150` (o -30).
 
 ### Fuentes
 

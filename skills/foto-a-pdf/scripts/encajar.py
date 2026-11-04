@@ -151,7 +151,12 @@ def extremos_h(m, y, grosor, xa, xb, r=10.0):
     mejor = max(tramos, key=lambda t: min(t[1], b) - max(t[0], a), default=None)
     if mejor is None or min(mejor[1], b) - max(mejor[0], a) < 0.5 * (b - a):
         return None
-    return (X0 + mejor[0]) / PPU, (X0 + mejor[1]) / PPU
+    # cada punta se corrige solo si cae cerca de la estimada: una línea algo inclinada en la foto
+    # se sale de la franja medida y parecería más corta (o se pegaría a otra línea y más larga)
+    tol = max(4.0, 0.05 * abs(xb - xa))
+    e0, e1 = (X0 + mejor[0]) / PPU, (X0 + mejor[1]) / PPU
+    lo, hi = min(xa, xb), max(xa, xb)
+    return (e0 if abs(e0 - lo) <= tol else lo), (e1 if abs(e1 - hi) <= tol else hi)
 
 
 def _linea(m, el):
@@ -228,7 +233,7 @@ def encajar_todo(elementos, base):
             continue
         tipo = el.get("tipo")
         try:
-            if tipo == "texto" and "caja" in el:
+            if tipo == "texto" and "caja" in el and not int(el.get("giro", 0)) % 360:
                 cuenta["textos"][1] += 1
                 nueva, palabras = texto(m, caja(el), len(str(el.get("texto", "")).split()))
                 if nueva:

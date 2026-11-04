@@ -7,7 +7,7 @@
     {
       "name": "foto-a-pdf",
       "description": "Convierte la foto de un documento en un PDF con el diseño a medida y texto real seleccionable.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {"name": "Tpskevin13"},
       "source": "./",
       "category": "productivity",

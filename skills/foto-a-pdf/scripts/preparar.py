@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 from comun import (ANCHO_U, MARGEN_IZQ, MARGEN_SUP, PAPELES_MM, abrir_imagen, con_reglas,
-                   fuente_reglas, guardar_json, leer_json, limpiar, otsu, salida_utf8)
+                   fuente_reglas, guardar_json, leer_json, limpiar, mascara_tinta, otsu, salida_utf8)
 
 ANCHO_FRANJA = 1400   # px de cada franja, sin las reglas
 ALTO_FRANJA_U = 180   # alto aproximado de cada franja
@@ -170,9 +170,38 @@ def elegir_papel(papel, proporcion, tolerancia):
     return 210.0, round(210 * proporcion, 1), "a medida"
 
 
+def girar(img, grados):
+    """Gira la foto 90, 180 o 270 grados en sentido horario (fotos sacadas de costado o al revés)."""
+    grados = int(grados or 0) % 360
+    if grados not in (0, 90, 180, 270):
+        sys.exit("--rotar acepta 0, 90, 180 o 270 (grados en sentido horario).")
+    return img.rotate(-grados, expand=True) if grados else img
+
+
+def inclinacion(img, limite=5.0):
+    """Ángulo (grados, antihorario) en que está torcido el contenido de la hoja, o 0.
+
+    Prueba giros chicos y se queda con el que deja las filas y columnas de tinta más marcadas:
+    con el dibujo derecho, renglones y líneas caen todos en las mismas filas o columnas.
+    """
+    gris = img.convert("L")
+    gris.thumbnail((900, 900))
+    m = Image.fromarray((mascara_tinta(gris) * 255).astype(np.uint8))
+    if np.asarray(m).mean() < 0.3:  # casi sin tinta: nada que medir
+        return 0.0
+
+    def nitidez(ang):
+        a = np.asarray(m.rotate(ang, resample=Image.Resampling.BILINEAR), dtype=np.float32)
+        return float((a.sum(axis=1) ** 2).sum() + (a.sum(axis=0) ** 2).sum())
+
+    mejor = max(np.arange(-limite, limite + 1e-6, 0.25), key=nitidez)
+    mejor = max(np.arange(mejor - 0.25, mejor + 0.26, 0.05), key=nitidez)
+    return 0.0 if abs(mejor) < 0.1 or abs(mejor) >= limite else round(float(mejor), 2)
+
+
 def cmd_ver(a):
     foto = Path(a.foto).resolve()
-    img = abrir_imagen(foto)
+    img = girar(abrir_imagen(foto), a.rotar)
     dt = carpeta_trabajo(foto, a.trabajo)
     alto_u = ANCHO_U * img.height / img.width
     vista = img.copy()
@@ -202,7 +231,7 @@ def cmd_ver(a):
 
 def cmd_preparar(a):
     foto = Path(a.foto).resolve()
-    img = abrir_imagen(foto)
+    img = girar(abrir_imagen(foto), a.rotar)
     dt = carpeta_trabajo(foto, a.trabajo)
     esquinas = None
     if a.esquinas:
@@ -231,6 +260,11 @@ def cmd_preparar(a):
         alto_px = round(img.width * al / an)
         if alto_px != img.height:
             img = img.resize((img.width, alto_px), Image.Resampling.LANCZOS)  # estira 3 % como mucho
+    giro = 0.0 if a.sin_enderezar else inclinacion(img)
+    if giro:
+        # la hoja (o lo impreso en ella) quedó algo torcida: se endereza para que las líneas queden a 0° y 90°
+        img = img.rotate(giro, resample=Image.Resampling.BICUBIC, fillcolor="white")
+        print(f"Enderecé el contenido {giro:+.2f}° (--sin-enderezar para no hacerlo).")
     if a.limpiar:
         img = limpiar(img)
     if img.width > ANCHO_BASE_MAX:
@@ -263,6 +297,7 @@ def cmd_preparar(a):
     guardar_json(dt / "info.json", {
         "foto": str(foto), "pdf": str(pdf), "papel": papel, "ancho_mm": an, "alto_mm": al,
         "ancho_u": ANCHO_U, "alto_u": alto_u, "esquinas": esquinas, "limpiada": a.limpiar,
+        "rotada": int(a.rotar or 0) % 360, "enderezada": giro,
         "franjas": franjas})
     print(f"Trabajo: {dt}")
     print(f"Página: {papel}, {an:g} x {al:g} mm = {ANCHO_U} x {alto_u:g} u (1 u = {an / ANCHO_U:.2f} mm)")
@@ -311,12 +346,15 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     v = sub.add_parser("ver", help="grilla sobre la foto y esquinas sugeridas")
     v.add_argument("foto")
+    v.add_argument("--rotar", type=int, default=0, help="girar la foto 90, 180 o 270 grados (horario)")
     v.add_argument("--trabajo", help="carpeta de trabajo (por defecto, una temporal por foto)")
     p = sub.add_parser("preparar", help="enderezar, limpiar y cortar en franjas")
     p.add_argument("foto")
     p.add_argument("--esquinas", help='"auto" o "x,y x,y x,y x,y" en u de la foto (sup-izq, sup-der, inf-der, inf-izq)')
     p.add_argument("--papel", default="auto", help="a4, carta, oficio, legal, a5, auto o ANCHOxALTO en mm")
     p.add_argument("--limpiar", action="store_true", help="papel blanco parejo (fotos de papel)")
+    p.add_argument("--rotar", type=int, default=0, help="girar la foto 90, 180 o 270 grados (horario) antes de todo")
+    p.add_argument("--sin-enderezar", action="store_true", help="no corregir la inclinación chica del contenido")
     p.add_argument("--franjas", type=int, help="cantidad de franjas (por defecto, una cada ~180 u)")
     p.add_argument("--trabajo")
     z = sub.add_parser("zoom", help="ampliar una zona de base.png")

@@ -3,6 +3,7 @@
   python construir.py TRABAJO [TRABAJO2 ...] [--pdf salida.pdf] [--sin-encajar] [--sin-comparar]
 """
 import argparse
+import math
 import os
 import re
 import sys
@@ -20,6 +21,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 from comun import ANCHO_U, abrir_imagen, leer_json, salida_utf8
 from encajar import caja, encajar_todo
+from rectificar import rectificar
 
 CARPETAS_FUENTES = [
     Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts",
@@ -238,7 +240,39 @@ class Pagina:
         return max(float(el.get("grosor", 1)), 0.1) * self.s
 
     def texto(self, el, n):
+        giro = float(el.get("giro", 0)) % 360
+        if not giro:
+            return self._texto(el, n, *caja(el))
+        if giro not in (90, 270):
+            # Giro libre (rótulos de isométrica, texto al revés): `centro` en la hoja, `largo` y
+            # `alto` del renglón sin girar. Sin `centro`, la caja es el renglón sin girar.
+            if "centro" in el:
+                cx, cy = (float(v) for v in el["centro"])
+                largo, alto = float(el["largo"]), float(el["alto"])
+            else:
+                x0, y0, x1, y1 = caja(el)
+                cx, cy, largo, alto = (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0
+            self.c.saveState()
+            self.c.translate(self.x(cx), self.y(cy))
+            self.c.rotate(giro)
+            base = self.alto / self.s + alto / 2
+            self._texto(el, n, -largo / 2, base - alto, largo / 2, base)
+            self.c.restoreState()
+            return
+        # Texto vertical (cotas de planos, lomos): se gira el lienzo y se dibuja como un renglón
+        # horizontal de largo = alto de la caja. 90: se lee de abajo hacia arriba; 270: al revés.
         x0, y0, x1, y1 = caja(el)
+        self.c.saveState()
+        if giro == 90:
+            self.c.translate(self.x(x1), self.y(y1))
+        else:
+            self.c.translate(self.x(x0), self.y(y0))
+        self.c.rotate(giro if giro == 90 else -90)
+        base = self.alto / self.s  # con el origen movido, esta "y" cae en la línea base
+        self._texto(el, n, 0, base - (x1 - x0), y1 - y0, base)
+        self.c.restoreState()
+
+    def _texto(self, el, n, x0, y0, x1, y1):
         fuente, cap = self.fuentes.elegir(el.get("fuente") or self.defecto.get("fuente"),
                                           el.get("negrita"), el.get("cursiva"))
         txt = str(el.get("texto", ""))
@@ -331,6 +365,45 @@ class Pagina:
             c.setLineCap(1)
             c.setDash([0.01, 2.5 * g + self.s])
         c.line(self.x(xa), self.y(ya), self.x(xb), self.y(yb))
+        flechas = el.get("flechas")  # "inicio", "fin" o "ambas": puntas llenas (cotas de planos)
+        if flechas:
+            c.setDash([])
+            c.setFillColor(color(el.get("color")))
+            largo = float(el.get("flecha", 4)) * self.s
+            pa, pb = (self.x(xa), self.y(ya)), (self.x(xb), self.y(yb))
+            for activo, punta, cola in ((flechas in ("inicio", "ambas"), pa, pb),
+                                        (flechas in ("fin", "ambas"), pb, pa)):
+                d = math.hypot(cola[0] - punta[0], cola[1] - punta[1])
+                if activo and d > 0:
+                    ux, uy = (cola[0] - punta[0]) / d, (cola[1] - punta[1]) / d
+                    bx, by = punta[0] + ux * largo, punta[1] + uy * largo
+                    ancho = 0.3 * largo
+                    p = c.beginPath()
+                    p.moveTo(*punta)
+                    p.lineTo(bx - uy * ancho, by + ux * ancho)
+                    p.lineTo(bx + uy * ancho, by - ux * ancho)
+                    p.close()
+                    c.drawPath(p, stroke=0, fill=1)
+        c.restoreState()
+
+    def arco(self, el, n):
+        """Arco de circunferencia: `centro` [x, y], `radio`, `desde` y `hasta` en grados
+        (0 = derecha, 90 = arriba, en sentido antihorario como se ve en la hoja).
+        Con `radio_y` es un arco de elipse, y con `giro` la elipse se gira (isométrica)."""
+        cx, cy = (float(v) for v in el["centro"])
+        r = float(el["radio"])
+        ry = float(el.get("radio_y", r))
+        a, b = float(el.get("desde", 0)), float(el.get("hasta", 360))
+        c = self.c
+        c.saveState()
+        c.setStrokeColor(color(el.get("color")))
+        c.setLineWidth(self._grosor(el))
+        if el.get("trazo", "solido") == "guiones":
+            g = self._grosor(el)
+            c.setDash(4 * g + 2 * self.s, 3 * g + 2 * self.s)
+        c.translate(self.x(cx), self.y(cy))
+        c.rotate(float(el.get("giro", 0)))
+        c.arc(-r * self.s, -ry * self.s, r * self.s, ry * self.s, a, (b - a) % 360 or 360)
         c.restoreState()
 
     def _forma(self, el, dibujar):
@@ -355,7 +428,18 @@ class Pagina:
             self._forma(el, lambda x, y, w, h, s, f: self.c.rect(x, y, w, h, stroke=s, fill=f))
 
     def elipse(self, el, n):
-        self._forma(el, lambda x, y, w, h, s, f: self.c.ellipse(x, y, x + w, y + h, stroke=s, fill=f))
+        giro = float(el.get("giro", 0)) % 360
+        if not giro:
+            return self._forma(el, lambda x, y, w, h, s, f: self.c.ellipse(x, y, x + w, y + h, stroke=s, fill=f))
+        # elipse girada (círculos en isométrica): la caja es la elipse sin girar; gira sobre su centro
+        x0, y0, x1, y1 = caja(el)
+        self.c.saveState()
+        self.c.translate(self.x((x0 + x1) / 2), self.y((y0 + y1) / 2))
+        self.c.rotate(giro)
+        w, h = (x1 - x0) * self.s, (y1 - y0) * self.s
+        self._forma({**el, "caja": [0, 0, 0, 0]},
+                    lambda x, y, _w, _h, s, f: self.c.ellipse(-w / 2, -h / 2, w / 2, h / 2, stroke=s, fill=f))
+        self.c.restoreState()
 
     def casilla(self, el, n):
         self.rect({**el, "relleno": None}, n)
@@ -446,7 +530,7 @@ class Pagina:
                                   {"ajuste": "no", "alinear": al, "color": el.get("color")}, n)
 
 
-TIPOS = ("texto", "linea", "rect", "elipse", "casilla", "imagen", "tabla")
+TIPOS = ("texto", "linea", "arco", "rect", "elipse", "casilla", "imagen", "tabla")
 
 
 def construir(trabajos, salida, encajar=True):
@@ -466,6 +550,10 @@ def construir(trabajos, salida, encajar=True):
         resumen = "sin encaje"
         if encajar:
             elementos, resumen = encajar_todo(elementos, base)
+        try:
+            resumen += " · " + rectificar(elementos, layout.get("angulos"), layout.get("tolerancia_angulo", 4))
+        except ValueError as e:
+            sys.exit(str(e))
         p = Pagina(c, ancho, alto, base, fuentes, layout.get("defecto", {}))
         fondo = pag.get("fondo")
         if fondo and str(fondo).lower() not in ("#fff", "#ffffff", "white", "blanco"):
