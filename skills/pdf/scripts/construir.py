@@ -19,7 +19,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 
-from comun import ANCHO_U, abrir_imagen, leer_json, salida_utf8
+from comun import ANCHO_U, abrir_imagen, guardar_json, leer_json, salida_utf8
 from encajar import caja, encajar_todo
 from rectificar import rectificar
 
@@ -283,6 +283,7 @@ class Pagina:
             natural = sum(pdfmetrics.stringWidth(t, f, 1) for t, f in self.fuentes.tramos(txt.strip(), fuente))
             if natural > 0 and natural * tam_u > 1.15 * (x1 - x0):
                 tam_u = (x1 - x0) / natural
+        el["_tam"], el["_cap"] = round(tam_u, 3), round(cap, 4)  # para exportar a CAD con el mismo tamaño
         self._renglon(txt, fuente, tam_u, x0, x1, y1, el, n)
 
     def _renglon(self, texto, fuente, tam_u, x0, x1, base_u, op, n):
@@ -536,7 +537,7 @@ TIPOS = ("texto", "linea", "arco", "rect", "elipse", "casilla", "imagen", "tabla
 def construir(trabajos, salida, encajar=True):
     fuentes = Fuentes()
     c = Canvas(str(salida))
-    c.setCreator("foto-a-pdf")
+    c.setCreator("lamina")
     for numero, d in enumerate(trabajos, 1):
         info, layout = leer_json(d / "info.json"), leer_json(d / "layout.json")
         if numero == 1:
@@ -569,6 +570,8 @@ def construir(trabajos, salida, encajar=True):
             except (KeyError, ValueError, TypeError, IndexError, OSError) as e:
                 p.avisos.append(f"#{n} ({tipo}): {type(e).__name__}: {e}")
         c.showPage()
+        # lo que se dibujó (ya encajado y enderezado), para cad.py
+        guardar_json(d / "final.json", {"ancho_mm": ancho / mm, "alto_mm": alto / mm, "elementos": elementos})
         print(f"Página {numero}: {len(elementos)} elementos · encaje: {resumen}")
         for a in p.avisos:
             print(f"  Aviso {a}")

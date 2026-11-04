@@ -3,7 +3,7 @@ description: 'Foto a PDF con el diseño a medida · sin enderezar líneas: gráf
 argument-hint: "[ruta de la foto] [papel: a4|carta|oficio|297x210]"
 ---
 
-Pasá a PDF la foto que indica el usuario siguiendo la skill `foto-a-pdf` (cargala con la herramienta Skill: `foto-a-pdf:foto-a-pdf`; si no está como plugin, `foto-a-pdf`).
+Pasá a PDF la foto que indica el usuario siguiendo la skill `pdf` del plugin lamina (cargala con la herramienta Skill: `lamina:pdf`; si se copió a mano, `pdf`).
 
 Modo de ángulos elegido: **libre** (sin enderezar líneas: gráficos, croquis, dibujos a mano alzada). En `layout.json` poné en la raíz `"angulos": "libre"`. Igual se corrige la inclinación general de la hoja al preparar, salvo que el usuario pida lo contrario (`--sin-enderezar`).
 

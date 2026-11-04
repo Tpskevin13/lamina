@@ -33,7 +33,7 @@ def carpeta_trabajo(foto, trabajo=None):
         d = Path(trabajo)
     else:
         marca = hashlib.md5(str(foto).lower().encode()).hexdigest()[:6]
-        d = Path(tempfile.gettempdir()) / "foto-a-pdf" / f"{foto.stem}-{marca}"
+        d = Path(tempfile.gettempdir()) / "lamina" / f"{foto.stem}-{marca}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

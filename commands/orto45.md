@@ -3,7 +3,7 @@ description: 'Foto a PDF con el diseño a medida · 0°, 45°, 90° y 135°: pla
 argument-hint: "[ruta de la foto] [papel: a4|carta|oficio|297x210]"
 ---
 
-Pasá a PDF la foto que indica el usuario siguiendo la skill `foto-a-pdf` (cargala con la herramienta Skill: `foto-a-pdf:foto-a-pdf`; si no está como plugin, `foto-a-pdf`).
+Pasá a PDF la foto que indica el usuario siguiendo la skill `pdf` del plugin lamina (cargala con la herramienta Skill: `lamina:pdf`; si se copió a mano, `pdf`).
 
 Modo de ángulos elegido: **orto45** (0°, 45°, 90° y 135°: planos con chaflanes (es el modo por defecto)). En `layout.json` poné en la raíz `"angulos": "orto45"`.
 

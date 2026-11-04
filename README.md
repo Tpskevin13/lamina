@@ -1,6 +1,6 @@
-# foto-a-pdf
+# lamina
 
-Skill para [Claude Code](https://claude.com/claude-code) que convierte la **foto de un documento en un PDF con el diseño a medida**. Sirve para facturas, presupuestos, formularios, cartas, recibos, apuntes y **planos y láminas de dibujo técnico** (cotas, ejes, arcos, isométrica).
+Plugin para [Claude Code](https://claude.com/claude-code) que convierte la **foto de un documento o de una lámina en un PDF con el diseño a medida**, y si querés, en un **DXF o DWG para AutoCAD**. Sirve para facturas, presupuestos, formularios, cartas, recibos, apuntes y **planos y láminas de dibujo técnico** (cotas, ejes, arcos, isométrica).
 
 Claude analiza la foto de arriba a abajo, renglón por renglón. Después arma un PDF donde cada texto, tabla, línea, casilla, logo y firma queda en el mismo lugar y del mismo tamaño que en la foto. El texto es **texto real**: se puede seleccionar, copiar y buscar. No es la foto pegada dentro de un PDF.
 
@@ -17,7 +17,7 @@ Claude analiza la foto de arriba a abajo, renglón por renglón. Después arma u
 - Las librerías de Python. Después de instalar la skill, corré esto una vez:
 
   ```bash
-  pip install pillow numpy reportlab pypdfium2
+  pip install pillow numpy reportlab pypdfium2 ezdxf
   ```
 
   Para fotos `.heic` de iPhone sumá `pillow-heif`. Si no las instalaste, Claude te las pide la primera vez.
@@ -27,41 +27,41 @@ Claude analiza la foto de arriba a abajo, renglón por renglón. Después arma u
 Dentro de Claude Code, escribí:
 
 ```
-/plugin marketplace add Tpskevin13/foto-a-pdf
-/plugin install foto-a-pdf@foto-a-pdf
+/plugin marketplace add Tpskevin13/lamina
+/plugin install lamina@lamina
 ```
 
 También se puede hacer desde la terminal:
 
 ```bash
-claude plugin marketplace add Tpskevin13/foto-a-pdf
+claude plugin marketplace add Tpskevin13/lamina
 ```
 
 ```bash
-claude plugin install foto-a-pdf@foto-a-pdf
+claude plugin install lamina@lamina
 ```
 
-Reiniciá Claude Code. Para actualizar más adelante, usá `/plugin marketplace update foto-a-pdf`.
+Reiniciá Claude Code. Para actualizar más adelante, usá `/plugin marketplace update lamina`.
 
 ### Opción 2: copiar la skill a mano
 
-Copiá la carpeta `skills/foto-a-pdf` a tu carpeta de skills personales:
+Copiá la carpeta `skills/pdf` a tu carpeta de skills personales:
 
-- Windows: `%USERPROFILE%\.claude\skills\foto-a-pdf`
-- macOS / Linux: `~/.claude/skills/foto-a-pdf`
+- Windows: `%USERPROFILE%\.claude\skills\pdf`
+- macOS / Linux: `~/.claude/skills/pdf`
 
 ```bash
-git clone https://github.com/Tpskevin13/foto-a-pdf.git
+git clone https://github.com/Tpskevin13/lamina.git
 ```
 
 ```bash
-cp -r foto-a-pdf/skills/foto-a-pdf ~/.claude/skills/
+cp -r lamina/skills/pdf ~/.claude/skills/
 ```
 
 En Windows, en PowerShell:
 
 ```powershell
-Copy-Item -Recurse foto-a-pdf\skills\foto-a-pdf "$env:USERPROFILE\.claude\skills\"
+Copy-Item -Recurse lamina\skills\pdf "$env:USERPROFILE\.claude\skills\"
 ```
 
 Para que la use un solo proyecto, copiala a `.claude/skills/` dentro de ese proyecto.
@@ -76,7 +76,23 @@ Pasale la foto a Claude y pedile el PDF:
 
 > Pasá a PDF esta lámina de dibujo técnico, es A4 apaisada y está en isométrica
 
-También podés llamar a la skill directamente. Si la instalaste como plugin, el comando es `/foto-a-pdf:foto-a-pdf ruta/de/la/foto.jpg`. Si la copiaste a mano, es `/foto-a-pdf ruta/de/la/foto.jpg`.
+También podés llamar a la skill directamente. Si la instalaste como plugin, el comando es `/lamina:pdf ruta/de/la/foto.jpg`. Si la copiaste a mano, es `/pdf ruta/de/la/foto.jpg` (los comandos por modo y los de CAD vienen solo con el plugin).
+
+### Pasar a AutoCAD
+
+| Comando | Qué hace |
+|---|---|
+| `/lamina:pdf` | foto → PDF |
+| `/lamina:dxf` | foto → PDF → DXF |
+| `/lamina:dwg` | foto → PDF → DXF → DWG |
+
+Los tres hacen el mismo análisis de la foto. El DXF y el DWG tienen lo mismo que el PDF: en milímetros 1:1 con el papel, con capas (`CONTORNO`, `FINAS`, `EJES`, `COTAS`, `TEXTO`…), textos reales de AutoCAD y las líneas ya enderezadas. A los de CAD también se les puede pasar el modo de ángulos:
+
+```
+/lamina:dwg C:\Users\yo\Descargas\pieza.jpg iso a4
+```
+
+El DWG lo escribe tu AutoCAD (sin abrir ventana) o, si no lo tenés, el [ODA File Converter](https://www.opendesign.com/guestfiles/oda_file_converter) (gratis). Sin ninguno de los dos queda el DXF, que AutoCAD abre igual. Los logos y firmas van como imágenes en una carpeta `NOMBRE_imagenes`, que tiene que ir junto al archivo.
 
 ### Comandos por tipo de dibujo
 
@@ -84,15 +100,15 @@ Con el plugin instalado, además del comando general hay uno por cada forma de e
 
 | Comando | Ángulos de las líneas | Para |
 |---|---|---|
-| `/foto-a-pdf:orto` | 0°, 90° | planos, formularios, tablas |
-| `/foto-a-pdf:orto45` | 0°, 45°, 90°, 135° | planos con chaflanes (lo que usa el comando general) |
-| `/foto-a-pdf:iso` | 0°, 30°, 90°, 150° | perspectiva isométrica |
-| `/foto-a-pdf:caballera` | 0°, 45°, 90°, 135° | perspectiva caballera |
-| `/foto-a-pdf:dimetrica` | 0°, 7°, 42°, 90°, 138°, 173° | dimétrica normalizada |
-| `/foto-a-pdf:lista-propia` | los que pongas | otros sistemas: `/foto-a-pdf:lista-propia foto.jpg 0 60 90 120` |
-| `/foto-a-pdf:libre` | sin tocar | gráficos, croquis, dibujos a mano alzada |
+| `/lamina:orto` | 0°, 90° | planos, formularios, tablas |
+| `/lamina:orto45` | 0°, 45°, 90°, 135° | planos con chaflanes (lo que usa el comando general) |
+| `/lamina:iso` | 0°, 30°, 90°, 150° | perspectiva isométrica |
+| `/lamina:caballera` | 0°, 45°, 90°, 135° | perspectiva caballera |
+| `/lamina:dimetrica` | 0°, 7°, 42°, 90°, 138°, 173° | dimétrica normalizada |
+| `/lamina:lista-propia` | los que pongas | otros sistemas: `/lamina:lista-propia foto.jpg 0 60 90 120` |
+| `/lamina:libre` | sin tocar | gráficos, croquis, dibujos a mano alzada |
 
-Ejemplo: `/foto-a-pdf:iso C:\Users\yo\Descargas\pieza.jpg a4`
+Ejemplo: `/lamina:iso C:\Users\yo\Descargas\pieza.jpg a4`
 
 Si pegaste la imagen en el chat, Claude busca las últimas imágenes de Descargas, Escritorio e Imágenes y te confirma cuál es. Lo más seguro es darle la ruta del archivo.
 
@@ -109,8 +125,9 @@ El PDF queda al lado de la foto, con el mismo nombre. Si ya hay uno con ese nomb
 5. **Rectificar** (`rectificar.py`). En los dibujos, lleva cada línea al ángulo permitido más cercano (orto, 45°, isométrica, caballera…) y cierra las esquinas por mínimos cuadrados, sin cambiar ningún ángulo.
 6. **Dibujar** (`construir.py`). Arma el PDF con ReportLab y fuentes TrueType. El tamaño de letra sale del alto medido de ese texto en esa fuente.
 7. **Comparar** (`comparar.py`). Renderiza el PDF y lo superpone con la foto: en rojo lo que falta, en celeste lo que sobra. Da la cobertura y la precisión por franja. Claude corrige y repite.
+8. **CAD** (`cad.py`, si lo pedís). Escribe el DXF con ezdxf y lo pasa a DWG con AutoCAD o el ODA File Converter.
 
-Los pasos están detallados en [`skills/foto-a-pdf/SKILL.md`](skills/foto-a-pdf/SKILL.md).
+Los pasos están detallados en [`skills/pdf/SKILL.md`](skills/pdf/SKILL.md).
 
 ## Ejemplo: lámina de dibujo técnico
 

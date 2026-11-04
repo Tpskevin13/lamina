@@ -17,7 +17,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "foto-a-pdf" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "pdf" / "scripts"))
 from preparar import coeficientes  # noqa: E402
 
 out = Path(sys.argv[1])

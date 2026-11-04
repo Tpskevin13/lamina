@@ -1,17 +1,22 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "foto-a-pdf",
-  "description": "Skill de Claude Code para pasar fotos de documentos a PDF con el diseño a medida.",
-  "owner": {"name": "Tpskevin13", "url": "https://github.com/Tpskevin13"},
+  "name": "lamina",
+  "description": "Plugin de Claude Code para pasar fotos de documentos y láminas a PDF, DXF y DWG con el diseño a medida.",
+  "owner": {
+    "name": "Tpskevin13",
+    "url": "https://github.com/Tpskevin13"
+  },
   "plugins": [
     {
-      "name": "foto-a-pdf",
-      "description": "Convierte la foto de un documento en un PDF con el diseño a medida y texto real seleccionable.",
-      "version": "1.2.0",
-      "author": {"name": "Tpskevin13"},
+      "name": "lamina",
+      "description": "Foto de un documento o lámina a PDF con el diseño a medida, y a AutoCAD (DXF o DWG).",
+      "version": "2.0.0",
+      "author": {
+        "name": "Tpskevin13"
+      },
       "source": "./",
       "category": "productivity",
-      "homepage": "https://github.com/Tpskevin13/foto-a-pdf"
+      "homepage": "https://github.com/Tpskevin13/lamina"
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
-name: foto-a-pdf
-description: 'Convierte una foto de un documento (factura, presupuesto, formulario, carta, apunte, recibo, cartel, tabla, plano o lámina de dibujo técnico, página impresa o escrita a mano) en un PDF que respeta el diseño a medida: misma posición y tamaño de cada renglón, tablas, líneas, casillas, logos y firmas, con texto real seleccionable. Analiza la foto de arriba a abajo, línea por línea, y verifica el resultado superponiéndolo con la foto. Usala siempre que el usuario pase una foto o captura y pida pasarla a PDF, digitalizarla, "escanearla", rehacerla, transcribirla manteniendo el formato o recrear el documento, aunque no diga "layout" ni "PDF".'
+name: pdf
+description: 'Convierte una foto de un documento (factura, presupuesto, formulario, carta, apunte, recibo, cartel, tabla, plano o lámina de dibujo técnico, página impresa o escrita a mano) en un PDF que respeta el diseño a medida: misma posición y tamaño de cada renglón, tablas, líneas, casillas, logos y firmas, con texto real seleccionable, y si se pide, lo pasa a AutoCAD (DXF o DWG). Analiza la foto de arriba a abajo, línea por línea, y verifica el resultado superponiéndolo con la foto. Usala siempre que el usuario pase una foto o captura y pida pasarla a PDF, digitalizarla, "escanearla", rehacerla, transcribirla manteniendo el formato o recrear el documento, aunque no diga "layout" ni "PDF". También cuando pida pasar una foto o una lámina a AutoCAD, DXF, DWG o CAD.'
 argument-hint: "[ruta de la foto] [papel: a4|carta|oficio]"
 ---
 
@@ -142,7 +142,7 @@ Elegí los ángulos con la clave `angulos` en la raíz de `layout.json`:
 | `[0, 60, 90, 120]` | los que pongas | otros sistemas |
 | `"libre"` | — | no tocar los ángulos (gráficos, croquis) |
 
-Si el usuario llamó a la skill desde un comando de modo (`/foto-a-pdf:iso`, `:orto`, `:libre`…), usá ese modo. Si no, elegilo vos según el dibujo, o preguntale si no está claro.
+Si el usuario llamó a la skill desde un comando de modo (`/lamina:iso`, `:orto`, `:libre`…), usá ese modo. Si no, elegilo vos según el dibujo, o preguntale si no está claro.
 
 `"rectificar": false` en una línea la deja como está (una inclinada a propósito que cae cerca de un ángulo permitido).
 
@@ -183,9 +183,26 @@ Repasá las franjas marcadas y las zonas listadas, corregí `layout.json` y volv
 
 Más de una página: preparar cada foto por separado (cada una tiene su carpeta) y después `python S/construir.py TRABAJO1 TRABAJO2 ... --pdf SALIDA.pdf`.
 
-## 6. Entregar
+## 6. Pasar a AutoCAD (DXF o DWG), si se pidió
 
-Decí dónde quedó el PDF, la cobertura y precisión finales, y listá lo que transcribiste con `[?]` o `[ilegible]` para que el usuario lo revise. Si lo pidió, ofrecé abrirlo.
+Solo si el usuario pidió DXF, DWG, AutoCAD o CAD (o llamó a `/lamina:dxf` o `/lamina:dwg`). Después de dejar bien el PDF:
+
+```bash
+python S/cad.py TRABAJO            # DXF al lado del PDF
+python S/cad.py TRABAJO --dwg      # además el DWG
+```
+
+Usa lo mismo que se dibujó en el PDF (ya encajado y enderezado), así que primero tiene que haber corrido `construir.py`. Necesita `ezdxf` (`python -m pip install ezdxf`; avisale al usuario antes de instalar).
+
+- Está en milímetros de la hoja (1:1 con el papel), con el origen abajo a la izquierda.
+- Capas: `CONTORNO` (líneas gruesas), `FINAS`, `EJES` (trazo y punto), `OCULTAS`, `COTAS` (líneas con flechas), `TEXTO`, `RELLENOS`, `IMAGENES` y `HOJA` (el borde del papel, que no se imprime).
+- Los textos son textos de AutoCAD, con la misma fuente y el mismo tamaño que en el PDF. Las elipses, arcos y textos girados mantienen su giro.
+- Las imágenes (logos, firmas, miniaturas) quedan como referencia externa en la carpeta `NOMBRE_imagenes`, que tiene que viajar junto al DXF o al DWG.
+- El DWG lo escribe AutoCAD si está instalado (con `accoreconsole`, sin abrir ventana) o el ODA File Converter (gratis). Si no hay ninguno, queda el DXF: AutoCAD lo abre igual y con Guardar como lo pasás a DWG.
+
+## 7. Entregar
+
+Decí dónde quedó el PDF (y el DXF o DWG si los pediste), la cobertura y precisión finales, y listá lo que transcribiste con `[?]` o `[ilegible]` para que el usuario lo revise. Si lo pidió, ofrecé abrirlo.
 
 ## Límites
 
