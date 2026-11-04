@@ -96,6 +96,12 @@ El PDF queda al lado de la foto, con el mismo nombre. Si ya hay uno con ese nomb
 
 Los pasos están detallados en [`skills/foto-a-pdf/SKILL.md`](skills/foto-a-pdf/SKILL.md).
 
+## Ejemplo: lámina de dibujo técnico
+
+[![Lámina escaneada, PDF generado y superposición de los dos](ejemplos/lamina-acotacion/comparacion.png)](ejemplos/lamina-acotacion/comparacion.png)
+
+*En [`ejemplos/lamina-acotacion`](ejemplos/lamina-acotacion) hay una lámina escolar de acotación escaneada, con manchas y anotaciones en lápiz, convertida en un [PDF A4 apaisado](ejemplos/lamina-acotacion/resultado.pdf). Las cotas, los ejes, los arcos y los rótulos son vectores y texto real. La miniatura "Distribución en el plano" está recortada de la foto. En la superposición, la precisión es del 97 % y la cobertura del 83 %: lo que falta es casi todo ruido del escaneo y trazos en lápiz, que se dejaron afuera a propósito.*
+
 ## Probarlo sin una foto propia
 
 ```bash
