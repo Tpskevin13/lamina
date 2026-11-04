@@ -142,6 +142,8 @@ Elegí los ángulos con la clave `angulos` en la raíz de `layout.json`:
 | `[0, 60, 90, 120]` | los que pongas | otros sistemas |
 | `"libre"` | — | no tocar los ángulos (gráficos, croquis) |
 
+Si el usuario llamó a la skill desde un comando de modo (`/foto-a-pdf:iso`, `:orto`, `:libre`…), usá ese modo. Si no, elegilo vos según el dibujo, o preguntale si no está claro.
+
 `"rectificar": false` en una línea la deja como está (una inclinada a propósito que cae cerca de un ángulo permitido).
 
 Isométrica: anotá las aristas como `linea` (cada arista de una pieza, de vértice a vértice). Los círculos de las caras salen como elipses de proporción 1 : 0,58: en la cara de arriba, `elipse` con el eje largo horizontal (`giro: 0`); en la cara lateral derecha, `giro: 60`, y en la izquierda, `giro: 120` (el eje largo queda perpendicular a la arista que sale de esa cara). Los arcos, con `arco` y `radio_y` igual a 0,58 × `radio` y el mismo `giro`. Los rótulos sobre una cara llevan `giro: 30` o `giro: 150` (o -30).

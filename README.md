@@ -78,6 +78,22 @@ Pasale la foto a Claude y pedile el PDF:
 
 También podés llamar a la skill directamente. Si la instalaste como plugin, el comando es `/foto-a-pdf:foto-a-pdf ruta/de/la/foto.jpg`. Si la copiaste a mano, es `/foto-a-pdf ruta/de/la/foto.jpg`.
 
+### Comandos por tipo de dibujo
+
+Con el plugin instalado, además del comando general hay uno por cada forma de enderezar las líneas:
+
+| Comando | Ángulos de las líneas | Para |
+|---|---|---|
+| `/foto-a-pdf:orto` | 0°, 90° | planos, formularios, tablas |
+| `/foto-a-pdf:orto45` | 0°, 45°, 90°, 135° | planos con chaflanes (lo que usa el comando general) |
+| `/foto-a-pdf:iso` | 0°, 30°, 90°, 150° | perspectiva isométrica |
+| `/foto-a-pdf:caballera` | 0°, 45°, 90°, 135° | perspectiva caballera |
+| `/foto-a-pdf:dimetrica` | 0°, 7°, 42°, 90°, 138°, 173° | dimétrica normalizada |
+| `/foto-a-pdf:lista-propia` | los que pongas | otros sistemas: `/foto-a-pdf:lista-propia foto.jpg 0 60 90 120` |
+| `/foto-a-pdf:libre` | sin tocar | gráficos, croquis, dibujos a mano alzada |
+
+Ejemplo: `/foto-a-pdf:iso C:\Users\yo\Descargas\pieza.jpg a4`
+
 Si pegaste la imagen en el chat, Claude busca las últimas imágenes de Descargas, Escritorio e Imágenes y te confirma cuál es. Lo más seguro es darle la ruta del archivo.
 
 Con la foto torcida o de costado no hace falta hacer nada: la hoja se endereza sola y, si está girada 90° o 180°, Claude lo ve y la gira. En los dibujos, las líneas casi rectas quedan exactas a 0°, 45° y 90°, o a 30°, 90° y 150° si le decís que es isométrica, y las esquinas quedan cerradas.
